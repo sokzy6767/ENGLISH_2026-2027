@@ -1,16 +1,19 @@
-// Offline režim žiackej appky – verzia 202609291332
-const CACHE = "clil4-202609291332";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+// Offline režim žiackej appky – verzia 202609301438
+// Pracuje len so súbormi z vlastnej adresy, nič iné nepúšťa ani neukladá.
+const CACHE = "clil4-202609301438";
+const CORE = ["./","./index.html","./app.css","./app.js","./lessons.json","./manifest.webmanifest","./icon-192.png","./icon-512.png","./fonts/baloo-2-latin-ext-500.woff2","./fonts/baloo-2-latin-500.woff2","./fonts/baloo-2-latin-ext-700.woff2","./fonts/baloo-2-latin-700.woff2","./fonts/baloo-2-latin-ext-800.woff2","./fonts/baloo-2-latin-800.woff2","./fonts/atkinson-hyperlegible-latin-ext-400.woff2","./fonts/atkinson-hyperlegible-latin-400.woff2","./fonts/atkinson-hyperlegible-latin-ext-700.woff2","./fonts/atkinson-hyperlegible-latin-700.woff2"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
-  const r = e.request; if (r.method !== "GET") return;
-  if (r.mode === "navigate" || r.url.endsWith("index.html")) {
-    // stránka: najprv internet (nové lekcie), bez internetu uložená verzia
-    e.respondWith(fetch(r).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put("./index.html", cp)); return res; })
-      .catch(() => caches.match("./index.html")));
+  const r = e.request, url = new URL(r.url);
+  if (r.method !== "GET" || url.origin !== self.location.origin) return;
+  const fresh = r.mode === "navigate" || /\.(html|js|css|json)$/.test(url.pathname);
+  if (fresh) {
+    // appka a lekcie: najprv internet (nová verzia), bez internetu uložená kópia
+    e.respondWith(fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(r, cp)); } return res; })
+      .catch(() => caches.match(r, { ignoreSearch: true }).then(hit => hit || caches.match("./index.html"))));
     return;
   }
-  // písma a ikony: z pamäte, inak z internetu a uložiť
-  e.respondWith(caches.match(r).then(hit => hit || fetch(r).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put(r, cp)); return res; })));
+  // písma a ikony: z pamäte
+  e.respondWith(caches.match(r).then(hit => hit || fetch(r)));
 });

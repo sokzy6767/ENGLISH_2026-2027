@@ -1,0 +1,18 @@
+ŽIACKA APPKA – nahratie na GitHub Pages
+
+PRVÝKRÁT
+1. Rozbaľ tento ZIP.
+2. Na GitHube v repozitári: Add file → Upload files → pretiahni VŠETKY súbory aj priečinok "fonts".
+3. Settings → Pages → Deploy from a branch → main, / (root) → Save.
+4. Odporúčané: Settings → Pages → zaškrtni "Enforce HTTPS".
+5. Link pošli žiakovi, na tablete "Pridať na plochu".
+
+AKTUALIZÁCIA
+Nahraj znova všetky súbory (prepíšu sa staré). Link sa nemení, pokrok žiaka zostáva.
+
+BEZPEČNOSŤ
+Stránka má prísnu bezpečnostnú politiku (Content-Security-Policy):
+- spúšťa len app.js z tejto adresy, žiadny vložený ani cudzí skript,
+- písma sú priložené, nič sa nesťahuje z iných serverov,
+- nemôže nič odosielať na iné servery (connect-src 'self'),
+- pokrok, chyby a kresby žiaka zostávajú len v tablete.
