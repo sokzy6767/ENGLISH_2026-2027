@@ -19,6 +19,10 @@ const $app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const pic = p => { p = String(p || "⭐"); return p.startsWith("svg:") ? (SVG[p.slice(4)] || "⭐") : esc(p); };
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+/* Poradie odpovedí: vždy náhodne (AI často dáva správnu odpoveď na prvé miesto).
+   Výnimka: true/false zostáva v pevnom poradí, aby sa žiak nemýlil. */
+const mix = opts => { const o = [...(opts || [])]; const tf = o.length === 2 && o.map(x => String(x).toLowerCase()).sort().join() === "false,true";
+  return tf ? o.slice().sort((a, b) => String(b).toLowerCase() === "true" ? 1 : -1) : shuffle(o); };
 const starsFor = (s, t) => !t ? 0 : s >= t * .9 ? 3 : s >= t * .7 ? 2 : s >= t * .5 ? 1 : 0;
 
 /* Výslovnosť – hlas zabudovaný v tablete */
@@ -75,7 +79,7 @@ function addMistake(m) {
   save();
 }
 const wordQ = w => ({ pic: w.pic, q: "What is it?", qSk: "Čo je na obrázku?", answer: w.en,
-  options: [w.en, ...shuffle(L().words.filter(x => x !== w)).slice(0, 2).map(x => x.en)] });
+  options: mix([w.en, ...shuffle(L().words.filter(x => x !== w)).slice(0, 2).map(x => x.en)]) });
 
 /* Kresby – každá lekcia má vlastný kľúč (obrázky sú väčšie) */
 const DKEY = id => "clil4-draw-" + id;
@@ -207,7 +211,7 @@ function setupPractice() {
   S.step = 0;
   S.match = { left: six, right: shuffle(six), sel: null, done: [], wrong: null };
   S.sort = { items: l.sort ? shuffle(l.sort.items) : [], i: 0, fb: null };
-  S.gap = { items: shuffle(l.gaps || []), i: 0, fb: null, pick: null };
+  S.gap = { items: shuffle(l.gaps || []).map(g => ({ ...g, options: mix(g.options) })), i: 0, fb: null, pick: null };
 }
 function nextPractice() {
   S.step++;
@@ -285,7 +289,7 @@ function setupTest() {
   const l = L();
   const picQs = shuffle(l.words).slice(0, 2).map(w => ({ pic: w.pic, q: "What is it?", qSk: "Čo je na obrázku?",
     options: shuffle([w.en, ...shuffle(l.words.filter(x => x !== w)).slice(0, 2).map(x => x.en)]), answer: w.en }));
-  const fixed = shuffle(l.test || []).slice(0, TMAX(l) - 2).map(q => ({ ...q, options: q.options.length === 2 ? q.options : shuffle(q.options) }));
+  const fixed = shuffle(l.test || []).slice(0, TMAX(l) - 2).map(q => ({ ...q, options: mix(q.options) }));
   S.qs = shuffle([...picQs, ...fixed]); S.qi = 0; S.score = 0; S.wrong = []; S.pick = null;
 }
 function renderTest() {
@@ -384,7 +388,7 @@ function saveDrawing() {
 
 /* ===== MY MISTAKES – opakovanie chýb ===== */
 function setupMistakes() {
-  S.mq = shuffle(P.mistakes).slice(0, 10).map(m => ({ ...m, options: m.options.length === 2 ? m.options : shuffle(m.options) }));
+  S.mq = shuffle(P.mistakes).slice(0, 10).map(m => ({ ...m, options: mix(m.options) }));
   S.mi = 0; S.mpick = null; S.mfixed = 0;
 }
 function renderMistakes() {
